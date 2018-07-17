@@ -105,57 +105,6 @@ def index():
 def about():
     return render_template('about.html')
 
-# @app.route('/test', methods=['GET', 'POST'])
-# def test():
-#     g = geocoder.ip('me')
-#     lat = str(g.lat)
-#     lon = str(g.lng)
-#     url = 'https://api.openweathermap.org/data/2.5/forecast?lat=' + lat + '&lon=' + lon + '&units=metric&appid=454d3e3138f204980589ae958b2a9728'
-#     result = requests.get(url).json()
-#     all_data = result['list']
-#
-#     weather = {}
-#     weather[0] = result['city']
-#     for data in all_data:
-#         dayUnix = data['dt']
-#         date = datetime.fromtimestamp(dayUnix)
-#         s = datetime.now() + timedelta(days=1)
-#         x = datetime.now() + timedelta(days=2)
-#         y = datetime.now() + timedelta(days=3)
-#         z = datetime.now() + timedelta(days=4)
-#         if s > date < x:
-#             ts = time.gmtime(dayUnix)
-#             day_of_week = time.strftime("%A", ts)
-#             data['dt'] = day_of_week
-#             weather[1] = data
-#         if  s < date < x:
-#             ts = time.gmtime(dayUnix)
-#             day_of_week = time.strftime("%A", ts)
-#             data['dt'] = day_of_week
-#             weather[2] = data
-#         if  s < date < y:
-#             ts = time.gmtime(dayUnix)
-#             day_of_week = time.strftime("%A", ts)
-#             data['dt'] = day_of_week
-#             weather[3] = data
-#         if  s < date < z:
-#             ts = time.gmtime(dayUnix)
-#             day_of_week = time.strftime("%A", ts)
-#             data['dt'] = day_of_week
-#             weather[4] = data
-#     print(weather)
-#
-#     rules = Rules()
-#     crop = request.form.get("selected_crop")
-#     print(crop)
-#     context = {
-#             'weather': weather,
-#             'rules': rules,
-#             'crop': crop,
-#             }
-#
-#     return render_template('test.html', context=context)
-
 #Posts Page
 @app.route('/posts')
 def posts():
@@ -249,7 +198,6 @@ def is_logged_in(f):
 @app.route('/manage_posts')
 @is_logged_in
 def manage_posts():
-
     #get posts
     posts = Posts.query.all()
 
@@ -344,37 +292,68 @@ def manage_rules():
 
 
 # #Edit post
-# @app.route('/edit_post/<string:id>', methods=['POST', 'GET'])
-# @is_logged_in
-# def edit_post(id):
-#
-#         post = posts.query.filter_by(id=id).one()
-#
-#         #get form
-#         form = PostForm(request.form)
-#
-#         #ppulate post form fields
-#         form.title.data = post['title']
-#         form.body.data = post['body']
-#
-#         if request.method == 'POST' and form.validate():
-#             title = request.form['title']
-#             body = request.form['body']
-#
-#             #create cursor
-#             cur = mysql.connection.cursor()
-#
-#             cur.execute("UPDATE posts SET title = %s, body= %s WHERE id = %s", (title, body, id))
-#
-#             mysql.connection.commit()
-#
-#             cur.close()
-#
-#             flash('Post Updated', 'success')
-#
-#             return redirect(url_for('posts'))
-#
-#         return render_template('edit_post.html', form=form)
+@app.route('/edit_post/<string:id>', methods=['POST', 'GET'])
+@is_logged_in
+def edit_post(id):
+
+        post = posts.query.filter_by(id=id).one()
+
+        #get form
+        form = PostForm(request.form)
+
+        #ppulate post form fields
+        form.title.data = post['title']
+        form.body.data = post['body']
+
+        if request.method == 'POST' and form.validate():
+            title = request.form['title']
+            body = request.form['body']
+
+            post = Posts(title=title, body=body, create_date=datetime.now())
+            db.session.add(post)
+            db.session.commit()
+
+            flash('Post Updated', 'success')
+
+            return redirect(url_for('posts'))
+
+        return render_template('edit_post.html', form=form)
+
+
+# #Edit Rule
+@app.route('/edit_rule/<string:id>', methods=['POST', 'GET'])
+@is_logged_in
+def edit_rule(id):
+
+        rule = rules.query.filter_by(id=id).one()
+
+        #get form
+        form = PostForm(request.form)
+
+        #ppulate post form fields
+        form.crop.data = rule['crop']
+        form.advice.data = rule['advice']
+        form.weather.data = rule['weather']
+        form.weather_condition.data = rule['weather_condition']
+        form.variable.data = rule['value']
+
+
+        if request.method == 'POST' and form.validate():
+            crop = request.form['crop']
+            advice = request.form['advice']
+            weather = request.form['weather']
+            weather_condition = request.form['weather_condition']
+            value = request.form['value']
+
+            rule = Rules(crop=crop, advice=advice, weather=weather, weather_condition=weather_condition, value=value, create_date=datetime.now())
+            db.session.add(rule)
+            db.session.commit()
+
+            flash('Rule Updated', 'success')
+
+            return redirect(url_for('manage_rules'))
+
+        return render_template('edit_rule.html', form=form)
 
 # @app.route('/delete_article/<string:id>', methods=['POST'])
 # @is_logged_in
